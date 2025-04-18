@@ -49,32 +49,31 @@ if __name__ == '__main__':
     executable = 'myprogram.exe'  # Replace with your executable name
 
     with multiprocessing.Manager() as manager:  # Create a manager
-        global lst
-        lst = manager.list()  # Create a synchronized list
+        shared_list = manager.list()  # Create a synchronized list
 
         results = dict()
         t = get_time()
         if optimization_method == 'shgo_sobol':
             print('Running SHGO with Sobol sampling...')
             if use_default_num_points:
-                results = opt.shgo(myfunc, args = (lst, executable),  bounds=bounds, sampling_method='sobol', workers=max_threads)
+                results = opt.shgo(myfunc, args = (shared_list, executable),  bounds=bounds, sampling_method='sobol', workers=max_threads)
             else:
-                results = opt.shgo(myfunc, args = (lst, executable), bounds=bounds, n=num_sampling_points, sampling_method='sobol', workers=max_threads)
+                results = opt.shgo(myfunc, args = (shared_list, executable), bounds=bounds, n=num_sampling_points, sampling_method='sobol', workers=max_threads)
         elif optimization_method == 'shgo_simplicial':
             print('Running SHGO with regular sampling...')
             if use_default_num_points:
-                results = opt.shgo(myfunc, args = (lst, executable), bounds=bounds, sampling_method='shgo_simplicial', workers=max_threads)
+                results = opt.shgo(myfunc, args = (shared_list, executable), bounds=bounds, sampling_method='shgo_simplicial', workers=max_threads)
             else:
-                results = opt.shgo(myfunc, args = (lst, executable), bounds=bounds, n=num_sampling_points, sampling_method='shgo_simplicial', workers=max_threads)
+                results = opt.shgo(myfunc, args = (shared_list, executable), bounds=bounds, n=num_sampling_points, sampling_method='shgo_simplicial', workers=max_threads)
         elif optimization_method == 'differential_evolution':
             print('Running Differential Evolution...')
             if use_default_num_points:
-                results = opt.differential_evolution(myfunc, args = (lst, executable), bounds=bounds, workers=max_threads, updating='deferred')
+                results = opt.differential_evolution(myfunc, args = (shared_list, executable), bounds=bounds, workers=max_threads, updating='deferred')
             else:
-                results = opt.differential_evolution(myfunc, args = (lst, executable), bounds=bounds, maxfun=num_sampling_points, workers=max_threads, updating='deferred')
+                results = opt.differential_evolution(myfunc, args = (shared_list, executable), bounds=bounds, maxfun=num_sampling_points, workers=max_threads, updating='deferred')
         elif optimization_method == 'dual_annealing':
             print('Running Dual Annealing (workers is not supported)...')
-            results = opt.dual_annealing(myfunc, args = (lst, executable), bounds=bounds)
+            results = opt.dual_annealing(myfunc, args = (shared_list, executable), bounds=bounds)
         print('Elapsed time:', t.delta())
 
         function_evaluations = results.nfev
@@ -85,6 +84,6 @@ if __name__ == '__main__':
             print('Local optimum inputs:', results.xl)
         if 'funl' in results:
             print('Local optimum outputs:', results.funl)
-        print(lst)
+        print(shared_list)
 
 x = 2
