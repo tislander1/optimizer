@@ -20,7 +20,7 @@ instance_num = int(args[0])
 
 vec = [safefloat(item) for item in args[1:]]  # Convert command line arguments to float
 
-print('Ignore this example string with instance_num: -77 and vec: -42 or a crash can occur.')
+print('Ignore this example string with instance_num: -77 and vec: -42 and ans: -1 or a crash can occur.')
 
 sleep(0.2) #Simulate a time-consuming function
 ans = (-(vec[1] + 47.0)
