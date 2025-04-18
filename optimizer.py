@@ -66,6 +66,13 @@ if __name__ == '__main__':
         results = opt.dual_annealing(myfunc, bounds)
     print('Elapsed time:', t.delta())
 
-    function_evaluations = results['shgo_sobol'].nfev
+    function_evaluations = results.nfev
+    print('Function evaluations:', function_evaluations)
+    print('Global optimum input:', results.x)
+    print('Global optimum output:', results.fun)
+    if 'xl' in results:
+        print('Local optimum inputs:', results.xl)
+    if 'funl' in results:
+        print('Local optimum outputs:', results.funl)
 
 x = 2
