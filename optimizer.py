@@ -1,23 +1,47 @@
-
-import numpy as np
+import re
+import subprocess
 import multiprocessing
 from time import sleep, time
 import scipy.optimize as opt
-from functools import partial
 
 
 
 
 def myfunc(vec, *args):
-    sleep(0.2) #Simulate a time-consuming function
-    # print(f"Evaluating {vec}")
-    ans = (-(vec[1] + 47.0)
-            * np.sin(np.sqrt(abs(vec[0]/2.0 + (vec[1] + 47.0))))
-            - vec[0] * np.sin(np.sqrt(abs(vec[0] - (vec[1] + 47.0))))
-            )
-    args[0].append({'in': vec, 'out': ans})  # Append the evaluated vector to the shared list
-    print(args[1])
-    return ans
+    executable = str(args[1])  # Get the executable name from args
+    command_string = executable + ' ' + ' '.join(str(item) for item in vec)
+
+    try:
+        # Execute the command and capture the output
+        result = subprocess.run(
+            command_string,  # Command to execute
+            shell=True,  # Use shell to execute the command string
+            capture_output=True,  # Capture stdout and stderr
+            text=True  # Decode output as text
+        )
+
+        # Check if the command was successful
+        if result.returncode != 0:
+            print(f"Error executing command: {result.stderr}")
+            return float('inf')  # Return a high value to indicate failure
+
+        # Parse the output (assuming the program prints a single float value)
+        output = result.stdout.strip()
+
+        # Use a regular expression to extract the value of ans.
+        # The regex looks for the pattern "begin_output" followed by "ans:" and captures the number until "end_output"
+        match = re.search(r"begin_output.*?ans:\s*([\d\.\-e]+).*?end_output", output)
+        if match:
+            output = float(match.group(1))  # Extract the ans value
+        else:
+            print("No valid output found in the command output.")
+            return float('inf')  # Return a high value to indicate failure
+        print(f"Command executed: {command_string}, Output: {output}")
+        return output
+
+    except Exception as e:
+        print(f"Exception occurred while executing command: {e}")
+        return float('inf')  # Return a high value to indicate failure
 
 class get_time:
     """A context manager to measure the execution time of a block of code."""
@@ -46,7 +70,7 @@ if __name__ == '__main__':
     # optimization_method = 'dual_annealing'  # Uncomment to use dual annealing
     # optimization_method = 'basinhopping'  # Uncomment to use basinhopping
 
-    executable = 'myprogram.exe'  # Replace with your executable name
+    executable = 'python eggholder.py 1'  # Replace with your executable name
 
     with multiprocessing.Manager() as manager:  # Create a manager
         shared_list = manager.list()  # Create a synchronized list

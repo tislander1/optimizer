@@ -29,4 +29,10 @@ ans = (-(vec[1] + 47.0)
         )
 
 return_string = f"begin_output instance_num: {instance_num}, vec: {vec}, ans: {ans} end_output"
+# The output format is important for the regex to work correctly.
+# It should contain "begin_output" and "end_output" markers, and the ans value should be in the format "ans: <value>"
+# The output should be a single line with no extra spaces or newlines.
+# Example output:
+# begin_output instance_num: 12, vec: [50.0, 60.0], ans: -1.234567 end_output
+# There can be other lines of output, but they should not interfere with the regex matching.
 print(return_string)
