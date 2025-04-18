@@ -37,6 +37,7 @@ def myfunc(vec, *args):
             print("No valid output found in the command output.")
             return float('inf')  # Return a high value to indicate failure
         print(f"Command executed: {command_string}, Output: {output}")
+        args[0].append({'in': vec, 'out': output})  # Append the input and output to the shared list
         return output
 
     except Exception as e:
