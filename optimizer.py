@@ -87,6 +87,9 @@ if __name__ == '__main__':
     executable = 'python eggholder.py 1'  # Replace with your executable 
     csv_results_file = 'results.csv'  # CSV results file
 
+    maximize = False  # Set to True if you want to maximize the function
+    # If maximize is True, the function will be negated to find the maximum
+
     #end fields to put into the future GUI ---------------------------------------------
 
     # Convert the DataFrame to a list of tuples for bounds, e.g., [(-512, 512), (-512, 512)]
@@ -132,7 +135,8 @@ if __name__ == '__main__':
             print('Local optimum inputs:', results.xl)
         if 'funl' in results:
             print('Local optimum outputs:', results.funl)
-        print(shared_list)
+
+        # print(shared_list)
 
         # Convert shared_list into a DataFrame
         columns = list(variables_list) + ['out']  # Use variable names from variables_list and add 'out' for the output
@@ -148,7 +152,7 @@ if __name__ == '__main__':
 
         # Print the resulting DataFrame
         results_df.to_csv(csv_results_file, index=False)
-        print("Results DataFrame has been exported to :" + str(csv_results_file))
+        print("Results DataFrame has been exported to: " + str(csv_results_file))
 
         x = 2
 
