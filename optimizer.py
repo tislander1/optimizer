@@ -1,5 +1,6 @@
 import re
 import subprocess
+import pandas as pd
 import multiprocessing
 from time import sleep, time
 import scipy.optimize as opt
@@ -60,7 +61,19 @@ class get_time:
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()  # For Windows compatibility
-    bounds = [(-512, 512), (-512, 512)]
+    bounds_table = pd.DataFrame( #define a dataframe with columns 'variable' 'lower bound' and 'upper bound'
+        {
+            'variable': ['x1', 'x2'],
+            'lower bound': [-512, -512],
+            'upper bound': [512, 512]
+        },
+    )
+    # Convert the DataFrame to a list of tuples for bounds, e.g., [(-512, 512), (-512, 512)]
+    # This is necessary for the optimization functions in scipy.optimize
+    # The bounds are defined as tuples of (lower bound, upper bound) for each variable
+    bounds = [tuple(x) for x in bounds_table[['lower bound', 'upper bound']].to_numpy()]
+
+
     max_threads = 3  # Number of workers for parallelization
     num_sampling_points = 100  # Number of evaluations
     use_default_num_points = True  # Use default number of points for each method
