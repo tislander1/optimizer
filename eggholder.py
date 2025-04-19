@@ -12,23 +12,25 @@ def safefloat(value):
 args = sys.argv[1:]  # Get command line arguments
 
 if len(args) < 2:
-    print("Usage: python eggholder.py <instance_num> <val1> <va12> ... <valN>")
-    print("Example: python eggholder.py 12 50.0 60")
+    print("Usage: python eggholder.py <instance_num> <variable info> <val1> <va12> ... <valN>")
+    print('Example: python eggholder.py 12 "[myvar1 myvar2]" 50.0 60')
     sys.exit(1)
 
 instance_num = int(args[0])
+vars_str = args[1]  # This is the string of variables, e.g., "50.0 60.0"
 
-vec = [safefloat(item) for item in args[1:]]  # Convert command line arguments to float
+vec = [safefloat(item) for item in args[2:]]  # Convert command line arguments to float
 
 print('Ignore this example string with instance_num: -77 and vec: -42 and ans: -1 or a crash can occur.')
 
-sleep(0.2) #Simulate a time-consuming function
+# sleep(0.2) #Simulate a time-consuming function
 ans = (-(vec[1] + 47.0)
         * np.sin(np.sqrt(abs(vec[0]/2.0 + (vec[1] + 47.0))))
         - vec[0] * np.sin(np.sqrt(abs(vec[0] - (vec[1] + 47.0))))
         )
 
-return_string = f"begin_output instance_num: {instance_num}, vec: {vec}, ans: {ans} end_output"
+return_string = f"begin_output instance_num: {instance_num}, vars: {vars_str} vec: {vec}, ans: {ans} end_output"
+x = 2
 # The output format is important for the regex to work correctly.
 # It should contain "begin_output" and "end_output" markers, and the ans value should be in the format "ans: <value>"
 # The output should be a single line with no extra spaces or newlines.

@@ -10,7 +10,8 @@ import scipy.optimize as opt
 
 def myfunc(vec, *args):
     executable = str(args[1])  # Get the executable name from args
-    command_string = executable + ' ' + ' '.join(str(item) for item in vec)
+    variables_liststr = str(args[2])  # Get the variable names list from args
+    command_string = executable + ' ' + variables_liststr + ' '+ ' '.join(str(item) for item in vec)
 
     try:
         # Execute the command and capture the output
@@ -61,6 +62,10 @@ class get_time:
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()  # For Windows compatibility
+
+    #begin fields to put into the future GUI ----------------------------------------------
+
+    # Define the bounds for the optimization variables in a table format
     bounds_table = pd.DataFrame( #define a dataframe with columns 'variable' 'lower bound' and 'upper bound'
         {
             'variable': ['x1', 'x2'],
@@ -68,11 +73,6 @@ if __name__ == '__main__':
             'upper bound': [512, 512]
         },
     )
-    # Convert the DataFrame to a list of tuples for bounds, e.g., [(-512, 512), (-512, 512)]
-    # This is necessary for the optimization functions in scipy.optimize
-    # The bounds are defined as tuples of (lower bound, upper bound) for each variable
-    bounds = [tuple(x) for x in bounds_table[['lower bound', 'upper bound']].to_numpy()]
-
 
     max_threads = 3  # Number of workers for parallelization
     num_sampling_points = 100  # Number of evaluations
@@ -84,7 +84,17 @@ if __name__ == '__main__':
     # optimization_method = 'dual_annealing'  # Uncomment to use dual annealing
     # optimization_method = 'basinhopping'  # Uncomment to use basinhopping
 
-    executable = 'python eggholder.py 1'  # Replace with your executable name
+    executable = 'python eggholder.py 1'  # Replace with your executable 
+    csv_results_file = 'results.csv'  # CSV results file
+
+    #end fields to put into the future GUI ---------------------------------------------
+
+    # Convert the DataFrame to a list of tuples for bounds, e.g., [(-512, 512), (-512, 512)]
+    # This is necessary for the optimization functions in scipy.optimize
+    # The bounds are defined as tuples of (lower bound, upper bound) for each variable
+    bounds = [tuple(x) for x in bounds_table[['lower bound', 'upper bound']].to_numpy()]
+    variables_list = bounds_table['variable'].to_numpy()  # Get the variable names
+    variables_liststr = '"' + str(variables_list) + '"'  # Convert to string format for the command line
 
     with multiprocessing.Manager() as manager:  # Create a manager
         shared_list = manager.list()  # Create a synchronized list
@@ -94,24 +104,24 @@ if __name__ == '__main__':
         if optimization_method == 'shgo_sobol':
             print('Running SHGO with Sobol sampling...')
             if use_default_num_points:
-                results = opt.shgo(myfunc, args = (shared_list, executable),  bounds=bounds, sampling_method='sobol', workers=max_threads)
+                results = opt.shgo(myfunc, args = (shared_list, executable, variables_liststr),  bounds=bounds, sampling_method='sobol', workers=max_threads)
             else:
-                results = opt.shgo(myfunc, args = (shared_list, executable), bounds=bounds, n=num_sampling_points, sampling_method='sobol', workers=max_threads)
+                results = opt.shgo(myfunc, args = (shared_list, executable, variables_liststr), bounds=bounds, n=num_sampling_points, sampling_method='sobol', workers=max_threads)
         elif optimization_method == 'shgo_simplicial':
             print('Running SHGO with regular sampling...')
             if use_default_num_points:
-                results = opt.shgo(myfunc, args = (shared_list, executable), bounds=bounds, sampling_method='shgo_simplicial', workers=max_threads)
+                results = opt.shgo(myfunc, args = (shared_list, executable, variables_liststr), bounds=bounds, sampling_method='shgo_simplicial', workers=max_threads)
             else:
-                results = opt.shgo(myfunc, args = (shared_list, executable), bounds=bounds, n=num_sampling_points, sampling_method='shgo_simplicial', workers=max_threads)
+                results = opt.shgo(myfunc, args = (shared_list, executable, variables_liststr), bounds=bounds, n=num_sampling_points, sampling_method='shgo_simplicial', workers=max_threads)
         elif optimization_method == 'differential_evolution':
             print('Running Differential Evolution...')
             if use_default_num_points:
-                results = opt.differential_evolution(myfunc, args = (shared_list, executable), bounds=bounds, workers=max_threads, updating='deferred')
+                results = opt.differential_evolution(myfunc, args = (shared_list, executable, variables_liststr), bounds=bounds, workers=max_threads, updating='deferred')
             else:
-                results = opt.differential_evolution(myfunc, args = (shared_list, executable), bounds=bounds, maxfun=num_sampling_points, workers=max_threads, updating='deferred')
+                results = opt.differential_evolution(myfunc, args = (shared_list, executable, variables_liststr), bounds=bounds, maxfun=num_sampling_points, workers=max_threads, updating='deferred')
         elif optimization_method == 'dual_annealing':
             print('Running Dual Annealing (workers is not supported)...')
-            results = opt.dual_annealing(myfunc, args = (shared_list, executable), bounds=bounds)
+            results = opt.dual_annealing(myfunc, args = (shared_list, executable, variables_liststr), bounds=bounds)
         print('Elapsed time:', t.delta())
 
         function_evaluations = results.nfev
@@ -123,5 +133,23 @@ if __name__ == '__main__':
         if 'funl' in results:
             print('Local optimum outputs:', results.funl)
         print(shared_list)
+
+        # Convert shared_list into a DataFrame
+        columns = list(variables_list) + ['out']  # Use variable names from variables_list and add 'out' for the output
+        data = []
+
+        for entry in shared_list:
+            row = list(entry['in']) + [entry['out']]  # Combine input variables and output into a single row
+            data.append(row)
+
+        results_df = pd.DataFrame(data, columns=columns)
+        # sort the DataFrame by the output column in ascending order
+        results_df.sort_values(by='out', ascending=True, inplace=True)
+
+        # Print the resulting DataFrame
+        results_df.to_csv(csv_results_file, index=False)
+        print("Results DataFrame has been exported to :" + str(csv_results_file))
+
+        x = 2
 
 x = 2
