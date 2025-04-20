@@ -25,15 +25,22 @@ def edit_cell(event):
     column = bounds_table.identify_column(event.x)
     row_id = bounds_table.identify_row(event.y)
 
+    # Get the bounding box of the cell
+    bbox = bounds_table.bbox(row_id, column)
+    if not bbox:
+        return  # If bbox is None, the cell is not visible
+
+    x, y, width, height = bbox
+
     # Get the current value of the cell
     current_value = bounds_table.item(row_id, "values")[int(column[1]) - 1]
 
     # Create an Entry widget over the cell
-    entry = tk.Entry(root)
+    entry = tk.Entry(root, bg="lightyellow")  # Highlight the cell with a yellow background
     entry.insert(0, current_value)
-    entry.place(x=event.x_root - bounds_table.winfo_rootx(),
-                y=event.y_root - bounds_table.winfo_rooty(),
-                width=bounds_table.column(column, "width"))
+    entry.place(x=x + bounds_table.winfo_rootx(),
+                y=y + bounds_table.winfo_rooty(),
+                width=width, height=height)
 
     # Function to save the new value
     def save_edit(event=None):
@@ -51,10 +58,6 @@ def edit_cell(event):
         finally:
             entry.destroy()
 
-    # Bind events to save the edit
-    entry.bind("<Return>", save_edit)  # Save on Enter key
-    entry.bind("<FocusOut>", save_edit)  # Save when focus is lost
-    entry.focus()
     # Bind events to save the edit
     entry.bind("<Return>", save_edit)  # Save on Enter key
     entry.bind("<FocusOut>", save_edit)  # Save when focus is lost
