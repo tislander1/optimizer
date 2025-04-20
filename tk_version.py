@@ -10,6 +10,57 @@ import subprocess
 import multiprocessing
 from time import sleep, time
 
+# Function to handle double-click on a cell to edit it
+def edit_cell(event):
+    # Get the selected item
+    selected_item = bounds_table.selection()
+    if not selected_item:
+        return
+
+    # Get the column and row clicked
+    region = bounds_table.identify("region", event.x, event.y)
+    if region != "cell":
+        return
+
+    column = bounds_table.identify_column(event.x)
+    row_id = bounds_table.identify_row(event.y)
+
+    # Get the current value of the cell
+    current_value = bounds_table.item(row_id, "values")[int(column[1]) - 1]
+
+    # Create an Entry widget over the cell
+    entry = tk.Entry(root)
+    entry.insert(0, current_value)
+    entry.place(x=event.x_root - bounds_table.winfo_rootx(),
+                y=event.y_root - bounds_table.winfo_rooty(),
+                width=bounds_table.column(column, "width"))
+
+    # Function to save the new value
+    def save_edit(event=None):
+        new_value = entry.get()
+        try:
+            # Validate numeric input for Lower Bound and Upper Bound columns
+            if column in ("#2", "#3") and new_value.strip() != "":
+                float(new_value)  # Ensure it's a valid float
+            # Update the Treeview with the new value
+            values = list(bounds_table.item(row_id, "values"))
+            values[int(column[1]) - 1] = new_value
+            bounds_table.item(row_id, values=values)
+        except ValueError:
+            print("Invalid input. Please enter a numeric value for bounds.")
+        finally:
+            entry.destroy()
+
+    # Bind events to save the edit
+    entry.bind("<Return>", save_edit)  # Save on Enter key
+    entry.bind("<FocusOut>", save_edit)  # Save when focus is lost
+    entry.focus()
+    # Bind events to save the edit
+    entry.bind("<Return>", save_edit)  # Save on Enter key
+    entry.bind("<FocusOut>", save_edit)  # Save when focus is lost
+    entry.focus()
+
+
 def myfunc(vec, *args):
     executable = str(args[1])  # Get the executable name from args
     variables_liststr = str(args[2])  # Get the variable names list from args
@@ -82,13 +133,10 @@ def run_optimization():
     maximize = maximize_var.get() == "True"
 
     # Create the bounds DataFrame
-    bounds_data = []
-    for i in range(len(bounds_table_entries)):
-        variable = bounds_table_entries[i][0].get()
-        lower_bound = float(bounds_table_entries[i][1].get())
-        upper_bound = float(bounds_table_entries[i][2].get())
-        bounds_data.append({'variable': variable, 'lower bound': lower_bound, 'upper bound': upper_bound})
-    bounds_table = pd.DataFrame(bounds_data)
+    # Get bounds data from the Treeview
+    bounds_table = get_bounds_from_table()
+
+
 
     # Convert bounds to tuples
     bounds = [tuple(x) for x in bounds_table[['lower bound', 'upper bound']].to_numpy()]
@@ -150,17 +198,53 @@ if __name__ == "__main__":
     maximize_menu = ttk.Combobox(root, textvariable=maximize_var, values=["True", "False"])
     maximize_menu.grid(row=4, column=1, sticky="w")
 
-    # Bounds table
-    tk.Label(root, text="Bounds Table:").grid(row=5, column=0, sticky="w")
-    bounds_table_entries = []
-    for i, variable in enumerate(["x1", "x2"]):  # Default variables
-        variable_var = tk.StringVar(value=variable)
-        lower_bound_var = tk.StringVar(value="-512")
-        upper_bound_var = tk.StringVar(value="512")
-        tk.Entry(root, textvariable=variable_var, width=10).grid(row=6 + i, column=0, sticky="w")
-        tk.Entry(root, textvariable=lower_bound_var, width=10).grid(row=6 + i, column=1, sticky="w")
-        tk.Entry(root, textvariable=upper_bound_var, width=10).grid(row=6 + i, column=2, sticky="w")
-        bounds_table_entries.append((variable_var, lower_bound_var, upper_bound_var))
+    # Bounds table using ttk.Treeview
+    tk.Label(root, text="Bounds Table:").grid(row=5, column=0, sticky="w", columnspan=3)
+
+    bounds_table = ttk.Treeview(root, columns=("Variable", "Lower Bound", "Upper Bound"), show="headings", height=5)
+    bounds_table.grid(row=6, column=0, columnspan=3, sticky="w")
+
+    # Define column headings
+    bounds_table.heading("Variable", text="Variable")
+    bounds_table.heading("Lower Bound", text="Lower Bound")
+    bounds_table.heading("Upper Bound", text="Upper Bound")
+
+    # Define column widths
+    bounds_table.column("Variable", width=100)
+    bounds_table.column("Lower Bound", width=100)
+    bounds_table.column("Upper Bound", width=100)
+
+    # Add default rows to the table (10 rows, with some blank initially)
+    default_bounds = [("x1", "-512", "512"), ("x2", "-512", "512")] + [("", "", "") for _ in range(8)]
+    for var, lower, upper in default_bounds:
+        bounds_table.insert("", "end", values=(var, lower, upper))
+    # Bind double-click to edit cells
+    bounds_table.bind("<Double-1>", edit_cell)
+        
+    # Function to retrieve data from the table
+    def get_bounds_from_table():
+        bounds_data = []
+        for row in bounds_table.get_children():
+            values = bounds_table.item(row, "values")
+            try:
+                if not values[0]:  # Skip empty variable names
+                    continue
+                # Validate numeric input for Lower Bound and Upper Bound columns
+
+                bounds_data.append({
+                    "variable": values[0],
+                    "lower bound": float(values[1]),
+                    "upper bound": float(values[2])
+                })
+            except ValueError:
+                pass
+
+        x = 2
+        print(f"Bounds data: {bounds_data}")
+        # Check if bounds_data is empty
+        assert len(bounds_data) > 0, "No valid bounds data found."
+        return pd.DataFrame(bounds_data)
+    
 
     # Run button
     tk.Button(root, text="Run Optimization", command=run_optimization).grid(row=8, column=0, columnspan=3)
