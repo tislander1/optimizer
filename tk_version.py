@@ -4,11 +4,17 @@ from tkinter import filedialog
 import pandas as pd
 import multiprocessing
 import scipy.optimize as opt
+import threading
 
 import re
 import subprocess
 import multiprocessing
 from time import sleep, time
+
+def run_optimization_thread():
+    # Run the optimization process in a separate thread
+    status_label.config(text="Status: Running...")
+    threading.Thread(target=run_optimization, daemon=True).start()
 
 # Function to handle double-click on a cell to edit it
 def edit_cell(event):
@@ -126,46 +132,55 @@ class get_time:
         return (self.delta, self.interval)
 
 def run_optimization():
-    # Get user inputs from the GUI
-    optimization_method = optimization_method_var.get()
-    executable = executable_var.get()
-    csv_results_file = csv_results_file_var.get()
-    tolerance = float(tolerance_var.get())
-    maximize = maximize_var.get() == "True"
+    try:
 
-    # Create the bounds DataFrame
-    # Get bounds data from the Treeview
-    bounds_table = get_bounds_from_table()
+        # Get user inputs from the GUI
+        optimization_method = optimization_method_var.get()
+        executable = executable_var.get()
+        csv_results_file = csv_results_file_var.get()
+        tolerance = float(tolerance_var.get())
+        maximize = maximize_var.get() == "True"
+
+        # Create the bounds DataFrame
+        # Get bounds data from the Treeview
+        bounds_table = get_bounds_from_table()
 
 
 
-    # Convert bounds to tuples
-    bounds = [tuple(x) for x in bounds_table[['lower bound', 'upper bound']].to_numpy()]
-    variables_list = bounds_table['variable'].to_numpy()
-    variables_liststr = '"' + str(variables_list) + '"'
+        # Convert bounds to tuples
+        bounds = [tuple(x) for x in bounds_table[['lower bound', 'upper bound']].to_numpy()]
+        variables_list = bounds_table['variable'].to_numpy()
+        variables_liststr = '"' + str(variables_list) + '"'
 
-    # Run the optimization process
-    with multiprocessing.Manager() as manager:
-        shared_list = manager.list()
-        results = dict()
-        if optimization_method == 'shgo_sobol':
-            results = opt.shgo(myfunc, args=(shared_list, executable, variables_liststr, maximize), bounds=bounds, sampling_method='sobol')
-        elif optimization_method == 'shgo_simplicial':
-            results = opt.shgo(myfunc, args=(shared_list, executable, variables_liststr, maximize), bounds=bounds, sampling_method='simplicial')
-        elif optimization_method == 'differential_evolution':
-            results = opt.differential_evolution(myfunc, args=(shared_list, executable, variables_liststr, maximize), bounds=bounds)
-        elif optimization_method == 'dual_annealing':
-            results = opt.dual_annealing(myfunc, args=(shared_list, executable, variables_liststr, maximize), bounds=bounds)
+        # Run the optimization process
+        with multiprocessing.Manager() as manager:
+            shared_list = manager.list()
+            results = dict()
+            if optimization_method == 'shgo_sobol':
+                results = opt.shgo(myfunc, args=(shared_list, executable, variables_liststr, maximize), bounds=bounds, sampling_method='sobol')
+            elif optimization_method == 'shgo_simplicial':
+                results = opt.shgo(myfunc, args=(shared_list, executable, variables_liststr, maximize), bounds=bounds, sampling_method='simplicial')
+            elif optimization_method == 'differential_evolution':
+                results = opt.differential_evolution(myfunc, args=(shared_list, executable, variables_liststr, maximize), bounds=bounds)
+            elif optimization_method == 'dual_annealing':
+                results = opt.dual_annealing(myfunc, args=(shared_list, executable, variables_liststr, maximize), bounds=bounds)
 
-        # Save results to CSV
-        columns = list(variables_list) + ['out']
-        data = []
-        for entry in shared_list:
-            row = list(entry['in']) + [entry['out']]
-            data.append(row)
-        results_df = pd.DataFrame(data, columns=columns)
-        results_df.to_csv(csv_results_file, index=False)
-        print("Results saved to:", csv_results_file)
+            # Save results to CSV
+            columns = list(variables_list) + ['out']
+            data = []
+            for entry in shared_list:
+                row = list(entry['in']) + [entry['out']]
+                data.append(row)
+            results_df = pd.DataFrame(data, columns=columns)
+            results_df.to_csv(csv_results_file, index=False)
+            print("Results saved to:", csv_results_file)
+            print("Optimization completed successfully.")
+    except Exception as e:
+        print(f"Error during optimization: {e}")
+    finally:
+        # Update the status label back to "Ready" in the main thread
+        root.after(0, lambda: status_label.config(text="Status: Ready"))
+
 
 if __name__ == "__main__":
     # Create the main window
@@ -248,7 +263,11 @@ if __name__ == "__main__":
     
 
     # Run button
-    tk.Button(root, text="Run Optimization", command=run_optimization).grid(row=8, column=0, columnspan=3)
-
+    tk.Button(root, text="Run Optimization", command=run_optimization_thread).grid(row=8, column=0, columnspan=3)
     # Start the GUI event loop
+
+    # Status label
+    status_label = tk.Label(root, text="Status: Ready")
+    status_label.grid(row=9, column=0, columnspan=3, sticky="w")
+
     root.mainloop()
