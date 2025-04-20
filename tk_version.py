@@ -72,7 +72,8 @@ def myfunc(vec, *args):
     executable = str(args[1])  # Get the executable name from args
     variables_liststr = str(args[2])  # Get the variable names list from args
     maximize = bool(args[3])  # Get the maximize flag from args
-    command_string = executable + ' ' + variables_liststr + ' '+ ' '.join(str(item) for item in vec)
+    instance_num = 1  # Instance number for the command
+    command_string = executable + ' ' + str(instance_num) + ' ' + variables_liststr + ' '+ ' '.join(str(item) for item in vec)
 
     maximize_factor = -1 if maximize else 1  # Set the factor for maximizing or minimizing
 
@@ -110,13 +111,6 @@ def myfunc(vec, *args):
         print(f"Exception occurred while executing command: {e}")
         return float('inf')  # Return a high value to indicate failure
 
-def fix_results_polarity(results, maximize):
-    """Fix the polarity of the results based on the maximize flag."""
-    if maximize:
-        results.fun = -results.fun  # Negate the function value for maximization
-        if 'funl' in results:
-            results.funl = -results.funl  # Negate local optimum output if present
-    return results
 
 class get_time:
     """A context manager to measure the execution time of a block of code."""
@@ -139,7 +133,7 @@ def run_optimization():
         executable = executable_var.get()
         csv_results_file = csv_results_file_var.get()
         tolerance = float(tolerance_var.get())
-        maximize = maximize_var.get() == "True"
+        maximize = maximize_var.get() == "maximize"
 
         # Create the bounds DataFrame
         # Get bounds data from the Treeview
@@ -168,6 +162,13 @@ def run_optimization():
             # Save results to CSV
             columns = list(variables_list) + ['out']
             data = []
+
+            # Convert the shared list to a regular list for processing
+            shared_list = list(shared_list)
+
+            # sort shared_list by the output value, ascending if minimizing, descending if maximizing
+            shared_list.sort(key=lambda x: x['out'], reverse=maximize)
+
             for entry in shared_list:
                 row = list(entry['in']) + [entry['out']]
                 data.append(row)
@@ -175,11 +176,16 @@ def run_optimization():
             results_df.to_csv(csv_results_file, index=False)
             print("Results saved to:", csv_results_file)
             print("Optimization completed successfully.")
+            status_code = 0  # Success
     except Exception as e:
         print(f"Error during optimization: {e}")
+        status_code = 1  # Error
     finally:
         # Update the status label back to "Ready" in the main thread
-        root.after(0, lambda: status_label.config(text="Status: Ready"))
+        if status_code == 0:
+            root.after(0, lambda: status_label.config(text="Status: Ready.  Results saved to " + csv_results_file))
+        else:
+            root.after(0, lambda: status_label.config(text="Status: Ready.  Error during optimization."))
 
 
 if __name__ == "__main__":
@@ -195,7 +201,7 @@ if __name__ == "__main__":
 
     # Executable
     tk.Label(root, text="Executable:").grid(row=1, column=0, sticky="w")
-    executable_var = tk.StringVar(value="python eggholder.py 1")
+    executable_var = tk.StringVar(value="python eggholder.py")
     tk.Entry(root, textvariable=executable_var, width=50).grid(row=1, column=1, sticky="w")
 
     # CSV results file
@@ -209,9 +215,9 @@ if __name__ == "__main__":
     tk.Entry(root, textvariable=tolerance_var, width=10).grid(row=3, column=1, sticky="w")
 
     # Maximize
-    tk.Label(root, text="Maximize:").grid(row=4, column=0, sticky="w")
-    maximize_var = tk.StringVar(value="False")
-    maximize_menu = ttk.Combobox(root, textvariable=maximize_var, values=["True", "False"])
+    tk.Label(root, text="Max/Min:").grid(row=4, column=0, sticky="w")
+    maximize_var = tk.StringVar(value="minimize")
+    maximize_menu = ttk.Combobox(root, textvariable=maximize_var, values=["minimize", "maximize"])
     maximize_menu.grid(row=4, column=1, sticky="w")
 
     # Bounds table using ttk.Treeview
