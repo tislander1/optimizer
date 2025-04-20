@@ -88,18 +88,19 @@ if __name__ == '__main__':
 
     max_threads = 3  # Number of workers for parallelization
     num_sampling_points = 100  # Number of evaluations
-    use_default_num_points = True  # Use default number of points for each method
+    use_default_num_points = False  # Use default number of points for each method
 
     # optimization_method = 'shgo_simplicial'  # Uncomment to use shgo with simplicial sampling
-    # optimization_method = 'shgo_sobol'  # Uncomment to use shgo with Sobol sampling
-    optimization_method = 'differential_evolution'  # Uncomment to use differential evolution
+    optimization_method = 'shgo_sobol'  # Uncomment to use shgo with Sobol sampling
+    # optimization_method = 'differential_evolution'  # Uncomment to use differential evolution
     # optimization_method = 'dual_annealing'  # Uncomment to use dual annealing
-    # optimization_method = 'basinhopping'  # Uncomment to use basinhopping
 
     executable = 'python eggholder.py 1'  # Replace with your executable 
     csv_results_file = 'results.csv'  # CSV results file
 
-    maximize = True  # Set to True if you want to maximize the function
+    tolerance = 1  # Function tolerance for optimization methods
+
+    maximize = False  # Set to True if you want to maximize the function
     # If maximize is True, the function will be negated to find the maximum
 
     #end fields to put into the future GUI ---------------------------------------------
@@ -119,23 +120,23 @@ if __name__ == '__main__':
         if optimization_method == 'shgo_sobol':
             print('Running SHGO with Sobol sampling...')
             if use_default_num_points:
-                results = opt.shgo(myfunc, args = (shared_list, executable, variables_liststr, maximize),  bounds=bounds, sampling_method='sobol', workers=max_threads)
+                results = opt.shgo(myfunc, args = (shared_list, executable, variables_liststr, maximize),  bounds=bounds, sampling_method='sobol', workers=max_threads, minimizer_kwargs={'f_tol': tolerance})
             else:
-                results = opt.shgo(myfunc, args = (shared_list, executable, variables_liststr, maximize), bounds=bounds, n=num_sampling_points, sampling_method='sobol', workers=max_threads)
+                results = opt.shgo(myfunc, args = (shared_list, executable, variables_liststr, maximize), bounds=bounds, n=num_sampling_points, sampling_method='sobol', workers=max_threads, minimizer_kwargs={'f_tol': tolerance})
         elif optimization_method == 'shgo_simplicial':
             print('Running SHGO with regular sampling...')
             if use_default_num_points:
-                results = opt.shgo(myfunc, args = (shared_list, executable, variables_liststr, maximize), bounds=bounds, sampling_method='shgo_simplicial', workers=max_threads)
+                results = opt.shgo(myfunc, args = (shared_list, executable, variables_liststr, maximize), bounds=bounds, sampling_method='simplicial', workers=max_threads, minimizer_kwargs={'f_tol': tolerance})
             else:
-                results = opt.shgo(myfunc, args = (shared_list, executable, variables_liststr, maximize), bounds=bounds, n=num_sampling_points, sampling_method='shgo_simplicial', workers=max_threads)
+                results = opt.shgo(myfunc, args = (shared_list, executable, variables_liststr, maximize), bounds=bounds, n=num_sampling_points, sampling_method='simplicial', workers=max_threads, minimizer_kwargs={'f_tol': tolerance})
         elif optimization_method == 'differential_evolution':
             print('Running Differential Evolution...')
             if use_default_num_points:
-                results = opt.differential_evolution(myfunc, args = (shared_list, executable, variables_liststr, maximize), bounds=bounds, workers=max_threads, updating='deferred')
+                results = opt.differential_evolution(myfunc, args = (shared_list, executable, variables_liststr, maximize), bounds=bounds, workers=max_threads, updating='deferred', atol=0, tol=tolerance)
             else:
-                results = opt.differential_evolution(myfunc, args = (shared_list, executable, variables_liststr, maximize), bounds=bounds, maxfun=num_sampling_points, workers=max_threads, updating='deferred')
+                results = opt.differential_evolution(myfunc, args = (shared_list, executable, variables_liststr, maximize), bounds=bounds, maxfun=num_sampling_points, workers=max_threads, updating='deferred', atol=0, tol=tolerance)
         elif optimization_method == 'dual_annealing':
-            print('Running Dual Annealing (workers is not supported)...')
+            print('Running Dual Annealing (workers and tolerance are not supported)...')
             results = opt.dual_annealing(myfunc, args = (shared_list, executable, variables_liststr, maximize), bounds=bounds)
         print('Elapsed time:', t.delta())
 
