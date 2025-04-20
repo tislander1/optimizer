@@ -36,11 +36,9 @@ def edit_cell(event):
     current_value = bounds_table.item(row_id, "values")[int(column[1]) - 1]
 
     # Create an Entry widget over the cell
-    entry = tk.Entry(root, bg="lightyellow")  # Highlight the cell with a yellow background
+    entry = tk.Entry(bounds_table, bg="lightyellow")  # Highlight the cell with a yellow background
     entry.insert(0, current_value)
-    entry.place(x=x + bounds_table.winfo_rootx(),
-                y=y + bounds_table.winfo_rooty(),
-                width=width, height=height)
+    entry.place(x=x, y=y, width=width, height=height)
 
     # Function to save the new value
     def save_edit(event=None):
