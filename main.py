@@ -197,9 +197,12 @@ def run_optimization():
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()  # For Windows compatibility
+
     # Create the main window
     root = tk.Tk()
-    root.title("Optimizer for external executables")
+    root.title("Cool optimizer for functions in external executables (COFFEE)")
+    root.geometry("550x400")
 
     # Optimization method
     tk.Label(root, text="Optimization Method:").grid(row=0, column=0, sticky="w")
