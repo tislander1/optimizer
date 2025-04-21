@@ -1,15 +1,17 @@
-import tkinter as tk
-from tkinter import ttk
-from tkinter import filedialog
+# GUI + Optimizer for external executables
+# tislander1 - April 20, 2025
+# Some code and assistance provided by GitHub Copilot (AI programming assistant).
+
+import re
+import threading
+import subprocess
 import pandas as pd
 import multiprocessing
 import scipy.optimize as opt
-import threading
-
-import re
-import subprocess
-import multiprocessing
 from time import sleep, time
+
+import tkinter as tk
+from tkinter import ttk
 
 def run_optimization_thread():
     # Run the optimization process in a separate thread
