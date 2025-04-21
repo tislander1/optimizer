@@ -1,10 +1,8 @@
-# Optimizer program for external executables.
+# Cool optimizer for functions in external executables (COFFEE) - April 20, 2025
+This program optimizes (maximizes or minimizes) the output from an external EXE. It is currently configured to minimize the eggholder function in the associated EXE, but it can correct anything as long as inputs and outputs are in the right format.
 
 ## Attribution
 This project was initially authored by tislander1 on April 20, 2025, with assistance from GitHub Copilot, an AI programming assistant.
-
-# COFFEE optimizer release 1 - April 20, 2025
-This program optimizes (maximizes or minimizes) the output from an external EXE. It is currently configured to minimize the eggholder function in the associated EXE, but it can correct anything as long as inputs and outputs are in the right format.
 
 <pre>
 Inputs:
