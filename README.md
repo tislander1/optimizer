@@ -6,11 +6,15 @@ This program wraps global optimization methods from scipy.minimize SHGO, differe
 ## Attribution
 This project was initially authored by tislander1 on April 20, 2025, with assistance from GitHub Copilot, an AI programming assistant.
 
+Program interface:
 ![image](https://github.com/user-attachments/assets/5f878f61-9108-4807-9282-614cc45badb0)
 
+Example CSV output (sorted results):
+![image](https://github.com/user-attachments/assets/cd376d01-d42b-4be0-81af-5c2e2ff97cca)
+
+Example function for minimization:
 ![image](https://github.com/user-attachments/assets/7a2ca5f6-b8e6-4c06-9491-af5929517b83)
 
-![image](https://github.com/user-attachments/assets/cd376d01-d42b-4be0-81af-5c2e2ff97cca)
 
 
 <pre>
