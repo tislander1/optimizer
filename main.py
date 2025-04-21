@@ -212,7 +212,7 @@ if __name__ == "__main__":
 
     # Executable
     tk.Label(root, text="Executable:").grid(row=1, column=0, sticky="w")
-    executable_var = tk.StringVar(value="python eggholder.py")
+    executable_var = tk.StringVar(value="eggholder.exe")
     tk.Entry(root, textvariable=executable_var, width=50).grid(row=1, column=1, sticky="w")
 
     # CSV results file
