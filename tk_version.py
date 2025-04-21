@@ -134,6 +134,8 @@ def run_optimization():
         csv_results_file = csv_results_file_var.get()
         tolerance = float(tolerance_var.get())
         maximize = maximize_var.get() == "maximize"
+        max_threads = max_threads_var.get()
+        max_threads = int(max_threads) if max_threads.isdigit() else 1  # Default to 1 if not a digit
 
         # Create the bounds DataFrame
         # Get bounds data from the Treeview
@@ -151,12 +153,16 @@ def run_optimization():
             shared_list = manager.list()
             results = dict()
             if optimization_method == 'shgo_sobol':
-                results = opt.shgo(myfunc, args=(shared_list, executable, variables_liststr, maximize), bounds=bounds, sampling_method='sobol')
+                print("Using SHGO with Sobol sampling")
+                results = opt.shgo(myfunc, args=(shared_list, executable, variables_liststr, maximize), bounds=bounds, sampling_method='sobol', minimizer_kwargs={'f_tol': tolerance}, workers=max_threads)
             elif optimization_method == 'shgo_simplicial':
-                results = opt.shgo(myfunc, args=(shared_list, executable, variables_liststr, maximize), bounds=bounds, sampling_method='simplicial')
+                print("Using SHGO with simplicial sampling")
+                results = opt.shgo(myfunc, args=(shared_list, executable, variables_liststr, maximize), bounds=bounds, sampling_method='simplicial', minimizer_kwargs={'f_tol': tolerance}, workers=max_threads)
             elif optimization_method == 'differential_evolution':
-                results = opt.differential_evolution(myfunc, args=(shared_list, executable, variables_liststr, maximize), bounds=bounds)
+                print("Using differential evolution")
+                results = opt.differential_evolution(myfunc, args=(shared_list, executable, variables_liststr, maximize), bounds=bounds, workers=max_threads, updating='deferred', atol=0, tol=tolerance)
             elif optimization_method == 'dual_annealing':
+                print("Using dual annealing.  Workers and tolerance are not supported.")
                 results = opt.dual_annealing(myfunc, args=(shared_list, executable, variables_liststr, maximize), bounds=bounds)
 
             # Save results to CSV
@@ -191,11 +197,11 @@ def run_optimization():
 if __name__ == "__main__":
     # Create the main window
     root = tk.Tk()
-    root.title("Optimization GUI")
+    root.title("Optimizer for external executables")
 
     # Optimization method
     tk.Label(root, text="Optimization Method:").grid(row=0, column=0, sticky="w")
-    optimization_method_var = tk.StringVar(value="shgo_sobol")
+    optimization_method_var = tk.StringVar(value="shgo_simplicial")
     optimization_method_menu = ttk.Combobox(root, textvariable=optimization_method_var, values=["shgo_sobol", "shgo_simplicial", "differential_evolution", "dual_annealing"])
     optimization_method_menu.grid(row=0, column=1, sticky="w")
 
@@ -220,11 +226,16 @@ if __name__ == "__main__":
     maximize_menu = ttk.Combobox(root, textvariable=maximize_var, values=["minimize", "maximize"])
     maximize_menu.grid(row=4, column=1, sticky="w")
 
+    #Max Threads
+    tk.Label(root, text="CPU Threads:").grid(row=5, column=0, sticky="w")
+    max_threads_var = tk.StringVar(value="1")  # Default to 1 thread
+    tk.Entry(root, textvariable=max_threads_var, width=10).grid(row=5, column=1, sticky="w")
+
     # Bounds table using ttk.Treeview
-    tk.Label(root, text="Bounds Table:").grid(row=5, column=0, sticky="w", columnspan=3)
+    tk.Label(root, text="Bounds Table:").grid(row=6, column=0, sticky="w", columnspan=3)
 
     bounds_table = ttk.Treeview(root, columns=("Variable", "Lower Bound", "Upper Bound"), show="headings", height=5)
-    bounds_table.grid(row=6, column=0, columnspan=3, sticky="w")
+    bounds_table.grid(row=7, column=0, columnspan=3, sticky="w")
 
     # Define column headings
     bounds_table.heading("Variable", text="Variable")
